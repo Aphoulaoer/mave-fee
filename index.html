@@ -385,7 +385,7 @@ window.onerror = function(msg){
 /* ============================================================
    ຕັ້ງຄ່າ
    ============================================================ */
-const APP_VERSION = "20260910-0827";
+const APP_VERSION = "20261002-1910";
 const SB_URL = "https://arpxzwmuxcudpdvghvud.supabase.co";
 const SB_KEY = "sb_publishable_wrx_pshRtsqBh-Xvly1l_g_u-sf6yjv";
 
@@ -1321,7 +1321,11 @@ async function loadStock() {
   try {
     const r = await api('df_stock_list', {p_token: S.token});
     if (!r.ok) { $('page').innerHTML = `<div class="banner err">${esc(r.error)}</div>`; return; }
-    S.cache.stock = r; drawStock();
+    S.cache.stock = r;
+    if (S.stkOrigin === undefined) S.stkOrigin = 'all';
+    if (S.stkView   === undefined) S.stkView   = 'items';
+    if (S.stkDate   === undefined) S.stkDate   = new Date().toISOString().slice(0,10);
+    drawStock();
   } catch (e) { $('page').innerHTML = `<div class="banner err">${esc(e.message)}</div>`; }
 }
 
@@ -1340,23 +1344,26 @@ function drawStock() {
   const nOut = items.filter(x=>Number(x.qty)<=0).length;
   const nLow = items.filter(x=>Number(x.qty)>0 && Number(x.qty)<=Number(x.min_qty)).length;
 
-  const q = S.stkQ.trim().toLowerCase();
-  const shown = items.filter(function(it){
-    if (S.stkGrp === 'out' && Number(it.qty) > 0) return false;
-    if (S.stkGrp === 'low' && !(Number(it.qty) > 0 && Number(it.qty) <= Number(it.min_qty))) return false;
-    if (S.stkGrp !== 'all' && S.stkGrp !== 'out' && S.stkGrp !== 'low' && it.grp !== S.stkGrp) return false;
-    if (q) {
-      const hay = (String(it.name) + ' ' + String(it.grp||'') + ' ' + String(it.unit||'')).toLowerCase();
-      if (hay.indexOf(q) < 0) return false;
-    }
-    return true;
-  });
-
   const cnt = {};
   items.forEach(function(it){ cnt[it.grp] = (cnt[it.grp]||0) + 1; });
   const chip = (key, label, n, color) =>
     `<button class="gchip ${S.stkGrp===key?'on':''}" onclick="setStkGrp('${key.replace(/'/g,"\\'")}')"
        ${color?`style="--c:${color}"`:''}>${esc(label)}<b>${n}</b></button>`;
+  const oChip = (key, label) =>
+    `<button class="gchip ${S.stkOrigin===key?'on':''}" onclick="setStkOrigin('${key}')">${label}</button>`;
+
+  const recentHtml = moves.length
+    ? moves.map(m=>`<div style="padding:11px 0;border-top:1px solid var(--line)">
+        <div style="display:flex;align-items:baseline;gap:8px">
+          <span style="flex:1;min-width:0;font-size:14px">${esc(m.item)}</span>
+          <span class="serif" style="font-size:17px;color:${MOVE_COLOR[m.kind]}">
+            ${m.kind==='out'?'−':(m.kind==='in'?'+':'')}${Math.abs(Number(m.qty)).toLocaleString()}</span>
+        </div>
+        <div class="rk-sub" style="margin-top:4px">
+          ${MOVE_LABEL[m.kind]} · ${esc(m.who||'-')} · ${esc(m.at)}
+          ${m.note?` · ${esc(m.note)}`:''}
+        </div></div>`).join('')
+    : `<p class="rk-sub" style="padding:20px 0;text-align:center">ຍັງບໍ່ມີການເຄື່ອນໄຫວ</p>`;
 
   $('page').innerHTML = `<div class="wrap">
     <div class="kpi3" style="margin-bottom:16px">
@@ -1368,56 +1375,67 @@ function drawStock() {
         <div class="g-lab">ໃກ້ໝົດ</div><div class="g-num">${nLow}</div></button>
     </div>
 
+    <div style="display:flex;gap:8px;margin-bottom:14px">
+      <button class="seg-btn ${S.stkView==='items'   ?'on':''}" style="flex:1" onclick="setStkView('items')">ລາຍການສາງ</button>
+      <button class="seg-btn ${S.stkView==='history' ?'on':''}" style="flex:1" onclick="setStkView('history')">ປະຫວັດ</button>
+    </div>
+
     <div class="grid gtop">
+      ${S.stkView==='history' ? `
+      <div class="g-card c2">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+          <div class="g-lab" style="flex:1">ປະຫວັດການເຄື່ອນໄຫວ</div>
+          <input type="date" id="stk-date" value="${S.stkDate}"
+            onchange="S.stkDate=this.value;loadStockHistory()"
+            style="border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-size:14px;background:var(--bg)">
+        </div>
+        <div id="stk-hist-wrap"><div class="loading-wrap" style="min-height:80px"><div class="spin"></div></div></div>
+      </div>` : `
       <div class="g-card c2" style="padding-bottom:8px">
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
           <div class="g-lab" style="flex:1">ລາຍການໃນສາງ</div>
           ${r.can_edit ? `<button class="pill on" onclick="openStockItem()">${IC.plus} ເພີ່ມ</button>` : ''}
         </div>
-
-        <input type="search" id="stk-q" value="${esc(S.stkQ)}" placeholder="ຄົ້ນຫາ ຊື່ ຫຼື ກຸ່ມ..."
+        <input type="search" id="stk-q" value="${esc(S.stkQ)}" placeholder="ຄົ້ນຫາຊື່ສິນຄ້າ..."
                oninput="S.stkQ=this.value;drawStockList()" autocomplete="off">
-
-        <div class="gchips">
+        ${S.stkOrigin === 'all' ? `<div class="gchips">
           ${chip('all','ທັງໝົດ', items.length)}
           ${groups.filter(g=>cnt[g]).map(g=>chip(g, g, cnt[g])).join('')}
+        </div>` : ''}
+        <div class="gchips" style="margin-top:4px">
+          ${oChip('all','🌐 ທັງໝົດ')}
+          ${oChip('ໄທ','🇹🇭 ໄທ')}
+          ${oChip('ເກົາຫຼີ','🇰🇷 ເກົາຫຼີ')}
         </div>
-
         <div id="stk-list"></div>
       </div>
-
       <div class="g-card">
         <div class="g-lab">ເຄື່ອນໄຫວລ່າສຸດ</div>
-        <div style="margin-top:12px">
-          ${moves.length ? moves.map(m=>`<div style="padding:11px 0;border-top:1px solid var(--line)">
-            <div style="display:flex;align-items:baseline;gap:8px">
-              <span style="flex:1;min-width:0;font-size:14px">${esc(m.item)}</span>
-              <span class="serif" style="font-size:17px;color:${MOVE_COLOR[m.kind]}">
-                ${m.kind==='out'?'−':(m.kind==='in'?'+':'')}${Math.abs(Number(m.qty)).toLocaleString()}</span>
-            </div>
-            <div class="rk-sub" style="margin-top:4px">
-              ${MOVE_LABEL[m.kind]} · ${esc(m.who||'-')} · ${esc(m.at)}
-              ${m.note?` · ${esc(m.note)}`:''}</div>
-          </div>`).join('') : `<p class="rk-sub" style="padding:20px 0;text-align:center">ຍັງບໍ່ມີການເຄື່ອນໄຫວ</p>`}
-        </div>
-      </div>
+        <div style="margin-top:12px">${recentHtml}</div>
+      </div>`}
     </div>
   </div>`;
-  drawStockList();
+
+  if (S.stkView === 'history') { loadStockHistory(); }
+  else { drawStockList(); }
 }
 
-function setStkGrp(g){ S.stkGrp = g; drawStock(); }
+function setStkGrp(g)    { S.stkGrp    = g; drawStock(); }
+function setStkOrigin(o) { S.stkOrigin = o; if (o !== 'all') S.stkGrp = 'all'; drawStock(); }
+function setStkView(v)   { S.stkView   = v; drawStock(); }
 
 function drawStockList() {
   const box = $('stk-list'); if (!box) return;
   const items = (S.cache.stock.items || []);
   const q = S.stkQ.trim().toLowerCase();
+  const stkOrig = S.stkOrigin || 'all';
   const shown = items.filter(function(it){
     if (S.stkGrp === 'out' && Number(it.qty) > 0) return false;
     if (S.stkGrp === 'low' && !(Number(it.qty) > 0 && Number(it.qty) <= Number(it.min_qty))) return false;
     if (S.stkGrp !== 'all' && S.stkGrp !== 'out' && S.stkGrp !== 'low' && it.grp !== S.stkGrp) return false;
+    if (stkOrig !== 'all' && it.origin !== stkOrig) return false;
     if (q) {
-      const hay = (String(it.name) + ' ' + String(it.grp||'') + ' ' + String(it.unit||'')).toLowerCase();
+      const hay = (String(it.name)+' '+String(it.grp||'')+' '+String(it.unit||'')+' '+String(it.origin||'')).toLowerCase();
       if (hay.indexOf(q) < 0) return false;
     }
     return true;
@@ -1430,13 +1448,18 @@ function drawStockList() {
 
   let last = null, html = '';
   shown.forEach(function(it){
-    if (S.stkGrp === 'all' && it.grp !== last) { last = it.grp;
+    if (S.stkGrp === 'all' && stkOrig === 'all' && it.grp !== last) { last = it.grp;
       html += `<div class="st-head">${esc(it.grp)}</div>`; }
     const st = stockState(it);
+    const origBadge = it.origin && it.origin !== 'ອື່ນໆ'
+      ? `<span style="font-size:11px;background:var(--line);color:var(--sub);padding:1px 5px;border-radius:4px;margin-left:4px">${esc(it.origin)}</span>` : '';
+    const thumb = it.img_url
+      ? `<img src="${esc(it.img_url)}" style="width:52px;height:52px;object-fit:cover;border-radius:10px;flex-shrink:0">`
+      : `<span class="st-dot" style="background:${st.k==='ok'?'var(--line-2)':st.color}"></span>`;
     html += `<button class="st-row" onclick="openItemMenu('${it.id}')">
-      <span class="st-dot" style="background:${st.k==='ok'?'var(--line-2)':st.color}"></span>
+      ${thumb}
       <span class="st-main">
-        <span class="st-name">${esc(it.name)}</span>
+        <span class="st-name">${esc(it.name)}${origBadge}</span>
         <span class="st-sub">${st.label ? `<b style="color:${st.color}">${st.label}</b> · ` : ''}ເຕືອນຕ່ຳກວ່າ ${Number(it.min_qty).toLocaleString()} ${esc(it.unit)}</span>
       </span>
       <span class="st-qty" style="color:${st.k==='ok'?'var(--text)':st.color}">
@@ -1457,18 +1480,20 @@ function openItemMenu(id) {
   ov.onclick = e => { if (e.target===ov) closeItemMenu(); };
   ov.innerHTML = `<div class="sheet">
     <div class="handle"></div>
+    ${it.img_url ? `<img src="${esc(it.img_url)}" alt="${esc(it.name)}"
+      style="width:100%;max-height:200px;object-fit:cover;border-radius:12px;margin-bottom:14px">` : ''}
     <div style="display:flex;align-items:flex-end;gap:14px;margin-bottom:20px">
       <div style="flex:1;min-width:0">
         <h3 style="margin:0 0 6px">${esc(it.name)}</h3>
-        <p class="rk-sub" style="margin:0">${st.label?`<b style="color:${st.color}">${st.label}</b> · `:''}ເຕືອນຕ່ຳກວ່າ ${Number(it.min_qty).toLocaleString()} ${esc(it.unit)}</p>
+        <p class="rk-sub" style="margin:0">${st.label?`<b style="color:${st.color}">${st.label}</b> · `:''}ເຕືອນຕ່ຳກວ່າ ${Number(it.min_qty).toLocaleString()} ${esc(it.unit)}${it.origin&&it.origin!=='ອື່ນໆ'?` · ${esc(it.origin)}`:''}</p>
       </div>
       <div class="serif" style="font-size:34px;line-height:1;white-space:nowrap;color:${st.k==='ok'?'var(--text)':st.color}">
         ${Number(it.qty).toLocaleString()}<span style="font-size:15px;color:var(--sub);font-family:inherit"> ${esc(it.unit)}</span></div>
     </div>
-    ${r.can_in  ? `<button class="btn-p" style="background:#22A06B;margin-bottom:10px" onclick="openMove('${id}','in')">ຮັບເຂົ້າ</button>`:''}
-    ${r.can_out ? `<button class="btn-p" style="background:#3B6FE0;margin-bottom:10px" onclick="openMove('${id}','out')">ເບີກອອກ</button>`:''}
-    ${r.can_out ? `<button class="btn-o" style="margin-bottom:10px" onclick="openMove('${id}','count')">ນັບສະຕັອກ</button>`:''}
-    ${r.can_edit? `<button class="btn-o" style="margin-bottom:10px" onclick="openStockItem('${id}')">ແກ້ໄຂລາຍການ</button>`:''}
+    ${r.can_in    ? `<button class="btn-p" style="background:#22A06B;margin-bottom:10px" onclick="openMove('${id}','in')">ຮັບເຂົ້າ</button>`:''}
+    ${r.can_out   ? `<button class="btn-p" style="background:#3B6FE0;margin-bottom:10px" onclick="openMove('${id}','out')">ເບີກອອກ</button>`:''}
+    ${r.can_count ? `<button class="btn-o" style="margin-bottom:10px" onclick="openMove('${id}','count')">ນັບສະຕັອກ</button>`:''}
+    ${r.can_edit  ? `<button class="btn-o" style="margin-bottom:10px" onclick="openStockItem('${id}')">ແກ້ໄຂລາຍການ</button>`:''}
     <button class="btn-o" onclick="closeItemMenu()">ປິດ</button>
   </div>`;
   document.body.appendChild(ov);
@@ -1521,18 +1546,31 @@ async function doMove(id, kind) {
 function openStockItem(id) {
   closeItemMenu();
   const it = id ? (S.cache.stock.items||[]).find(x=>x.id===id) : null;
+  const origins = ['ໄທ','ເກົາຫຼີ','ອື່ນໆ'];
   const ov = document.createElement('div');
   ov.className='overlay'; ov.id='siOv';
   ov.onclick = e => { if (e.target===ov) closeStockItem(); };
   ov.innerHTML = `<div class="sheet">
     <div class="handle"></div>
     <h3>${it?'ແກ້ໄຂລາຍການ':'ເພີ່ມລາຍການໃໝ່'}</h3>
+    ${it && it.img_url ? `<div style="text-align:center;margin-bottom:12px">
+      <img id="si-cur-img" src="${esc(it.img_url)}" style="width:80px;height:80px;object-fit:cover;border-radius:10px;border:1px solid var(--line)"></div>` : ''}
+    <div id="si-img-preview-wrap"></div>
+    <div class="field"><label class="lbl">ຮູບສິນຄ້າ ${it&&it.img_url?'(ອັບໂຫລດໃໝ່ຖ້າຕ້ອງການປ່ຽນ)':''}</label>
+      <input type="file" id="si-img" accept="image/jpeg,image/png,image/webp,image/gif"
+        style="font-size:13px;color:var(--sub)" onchange="prevStockImg(this)"></div>
     <div class="field"><label class="lbl">ຊື່ລາຍການ *</label>
       <input id="si-name" value="${it?esc(it.name):''}" placeholder="ເຊັ່ນ: Botox"></div>
-    <div class="field"><label class="lbl">ກຸ່ມ</label>
-      <select id="si-grp">
-        ${(S.cache.stock.groups||[]).map(g=>`<option value="${esc(g)}" ${it&&it.grp===g?'selected':''}>${esc(g)}</option>`).join('')}
-      </select></div>
+    <div class="g2">
+      <div class="field"><label class="lbl">ກຸ່ມ</label>
+        <select id="si-grp">
+          ${(S.cache.stock.groups||[]).map(g=>`<option value="${esc(g)}" ${it&&it.grp===g?'selected':''}>${esc(g)}</option>`).join('')}
+        </select></div>
+      <div class="field"><label class="lbl">ແຫຼ່ງທີ່ມາ</label>
+        <select id="si-origin">
+          ${origins.map(o=>`<option value="${esc(o)}" ${(it?it.origin===o:o==='ອື່ນໆ')?'selected':''}>${esc(o)}</option>`).join('')}
+        </select></div>
+    </div>
     <div class="g2">
       <div class="field"><label class="lbl">ຫົວໜ່ວຍ</label>
         <input id="si-unit" value="${it?esc(it.unit):''}" placeholder="ຂວດ / ກ່ອງ / ເສັ້ນ"></div>
@@ -1565,15 +1603,97 @@ async function delStockItem(id, name) {
 async function saveStockItem(id) {
   const name = $('si-name').value.trim();
   if (!name) return toast('ກະລຸນາໃສ່ຊື່ລາຍການ', false);
-  const act = $('si-active');
+  const act    = $('si-active');
+  const imgInp = $('si-img');
+  let img_url  = null;
+  if (imgInp && imgInp.files && imgInp.files[0]) {
+    const btn = document.querySelector('#siOv .btn-p');
+    if (btn) { btn.disabled = true; btn.textContent = 'ກຳລັງອັບໂຫລດ...'; }
+    try { img_url = await uploadStockImage(imgInp.files[0]); }
+    catch(e) { if (btn) { btn.disabled=false; btn.textContent='ບັນທຶກ'; }
+      return toast('ອັບໂຫລດຮູບລົ້ມເຫຼວ: ' + e.message, false); }
+  }
   try {
-    const r = await api('df_stock_item_save', {p_token: S.token, p_id: id,
+    const params = {p_token: S.token, p_id: id,
       p_name: name, p_unit: $('si-unit').value,
-      p_min: Number($('si-min').value)||0, p_grp: ($('si-grp')?$('si-grp').value:null),
-      p_active: act ? act.checked : true});
+      p_min: Number($('si-min').value)||0,
+      p_grp:    ($('si-grp')    ? $('si-grp').value    : null),
+      p_origin: ($('si-origin') ? $('si-origin').value : null),
+      p_active: act ? act.checked : true};
+    if (img_url) params.p_img_url = img_url;
+    const r = await api('df_stock_item_save', params);
     if (!r.ok) return toast(r.error, false);
     closeStockItem(); toast('ບັນທຶກແລ້ວ'); loadStock();
   } catch (e) { toast(e.message, false); }
+}
+
+/* ──────────── Stock image helpers ──────────── */
+function prevStockImg(inp) {
+  const wrap = $('si-img-preview-wrap');
+  if (!wrap) return;
+  if (!inp.files || !inp.files[0]) { wrap.innerHTML = ''; return; }
+  const url = URL.createObjectURL(inp.files[0]);
+  wrap.innerHTML = `<div style="text-align:center;margin-bottom:8px">
+    <img src="${url}" style="width:80px;height:80px;object-fit:cover;border-radius:10px;border:1px solid var(--line)">
+  </div>`;
+}
+
+async function uploadStockImage(file) {
+  if (file.size > 5 * 1024 * 1024) throw new Error('ໄຟລ໌ໃຫຍ່ເກີນ 5 MB');
+  const ext   = (file.name.split('.').pop() || 'jpg').toLowerCase();
+  const fname = Date.now() + '_' + Math.random().toString(36).slice(2,8) + '.' + ext;
+  const res   = await fetch(`${SB_URL}/storage/v1/object/stock-images/${fname}`, {
+    method: 'POST',
+    headers: { apikey: SB_KEY, 'Content-Type': file.type || 'image/jpeg' },
+    body: file
+  });
+  if (!res.ok) { const t = await res.text(); throw new Error(t); }
+  return `${SB_URL}/storage/v1/object/public/stock-images/${fname}`;
+}
+
+/* ──────────── Stock history (by date) ──────────── */
+async function loadStockHistory() {
+  const wrap = $('stk-hist-wrap'); if (!wrap) return;
+  wrap.innerHTML = '<div class="loading-wrap" style="min-height:80px"><div class="spin"></div></div>';
+  try {
+    const r = await api('df_stock_moves_by_date', {p_token: S.token, p_date: S.stkDate});
+    if (!r.ok) { wrap.innerHTML = `<div class="banner err">${esc(r.error)}</div>`; return; }
+    const moves = r.moves || [];
+    if (!moves.length) {
+      wrap.innerHTML = '<div style="text-align:center;padding:28px;color:var(--sub)">ບໍ່ມີຂໍ້ມູນໃນວັນນີ້</div>';
+      return;
+    }
+    const kindLabel = {in:'ຮັບເຂົ້າ', out:'ເບີກອອກ', count:'ນັບສະຕັອກ'};
+    const kindColor = {in:'#22A06B', out:'#E03E3E', count:'#8E6FD8'};
+    const groups = {in:[], out:[], count:[]};
+    moves.forEach(m => { const k = m.kind || 'out'; if (groups[k]) groups[k].push(m); });
+    let html = '';
+    ['in','out','count'].forEach(k => {
+      if (!groups[k].length) return;
+      html += `<div style="margin-bottom:20px">
+        <div style="font-size:12px;font-weight:700;color:${kindColor[k]};letter-spacing:.5px;
+          padding:3px 8px;background:${kindColor[k]}18;border-radius:6px;display:inline-block;margin-bottom:8px">
+          ${kindLabel[k]} · ${groups[k].length} ລາຍການ</div>`;
+      groups[k].forEach(m => {
+        const sign = k === 'out' ? '−' : (k === 'in' ? '+' : '');
+        html += `<div style="background:var(--card);border-radius:10px;padding:10px 12px;
+            margin-bottom:8px;display:flex;align-items:center;gap:10px">
+          <div style="flex:1;min-width:0">
+            <div style="font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(m.item)}</div>
+            <div style="font-size:11px;color:var(--sub);margin-top:2px">
+              ${esc(m.who||'-')} · ${esc(m.at||'')}${m.note?` · ${esc(m.note)}`:''}
+            </div>
+          </div>
+          <div style="text-align:right;flex-shrink:0">
+            <div style="font-size:17px;font-weight:700;color:${kindColor[k]}">${sign}${Number(m.qty).toLocaleString()}</div>
+            <div style="font-size:11px;color:var(--sub)">→ ${Number(m.after).toLocaleString()}</div>
+          </div>
+        </div>`;
+      });
+      html += '</div>';
+    });
+    wrap.innerHTML = html;
+  } catch (e) { wrap.innerHTML = `<div class="banner err">${esc(e.message)}</div>`; }
 }
 
 /* ============================================================
