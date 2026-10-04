@@ -385,7 +385,7 @@ window.onerror = function(msg){
 /* ============================================================
    ຕັ້ງຄ່າ
    ============================================================ */
-const APP_VERSION = "20261002-2010";
+const APP_VERSION = "20261004-1430";
 const SB_URL = "https://arpxzwmuxcudpdvghvud.supabase.co";
 const SB_KEY = "sb_publishable_wrx_pshRtsqBh-Xvly1l_g_u-sf6yjv";
 
@@ -1316,6 +1316,85 @@ async function saveEdit(id) {
 /* ============================================================
    ສະຕັອກ
    ============================================================ */
+function injectStkStyles() {
+  if (document.getElementById('stk-css')) return;
+  const s = document.createElement('style');
+  s.id = 'stk-css';
+  s.textContent = `
+    :root { --gold:#B8964A; --gold-l:#D4AF6E; --gold-s:#F0E8D5; --gold-d:#8C7038; }
+    /* Origin cards */
+    .stk-orig-card {
+      display:flex;align-items:center;gap:14px;
+      padding:18px 16px 18px 22px;
+      background:var(--card);border:1.5px solid var(--line);
+      border-radius:16px;width:100%;text-align:left;cursor:pointer;
+      position:relative;overflow:hidden;transition:border-color .2s,box-shadow .2s;
+    }
+    .stk-orig-card:active { border-color:var(--gold);box-shadow:0 2px 12px rgba(184,150,74,.12); }
+    .stk-orig-accent { position:absolute;left:0;top:0;bottom:0;width:4px; }
+    .stk-flag-circle {
+      width:52px;height:52px;border-radius:50%;
+      display:flex;align-items:center;justify-content:center;
+      font-size:26px;flex-shrink:0;
+    }
+    /* Gold tab bar */
+    .stk-tabs { background:var(--gold-s)!important; border:1.5px solid rgba(184,150,74,.28)!important; }
+    .stk-tabs .seg-btn { color:var(--gold-d); }
+    .stk-tabs .seg-btn.on {
+      background:linear-gradient(135deg,var(--gold-d) 0%,var(--gold) 100%)!important;
+      color:#fff!important;border:none!important;font-weight:700;
+    }
+    /* KPI gold tile */
+    .stk-kpi-gold { background:linear-gradient(135deg,var(--gold-d) 0%,var(--gold-l) 100%)!important; }
+    /* Back button */
+    .stk-back {
+      display:flex;align-items:center;gap:6px;
+      background:var(--gold-s);border:1.5px solid rgba(184,150,74,.45);
+      border-radius:10px;padding:8px 14px;font-size:13.5px;cursor:pointer;
+      color:var(--gold-d);font-weight:700;
+    }
+    /* Gold add button */
+    .btn-gold {
+      background:linear-gradient(135deg,var(--gold-d) 0%,var(--gold-l) 100%);
+      color:#fff;font-weight:700;border:none;
+      padding:9px 16px;border-radius:8px;font-size:13.5px;
+      display:inline-flex;align-items:center;gap:6px;cursor:pointer;
+    }
+    /* Move history item card */
+    .stk-hist-item {
+      background:var(--card);border:1px solid var(--line);
+      border-radius:10px;padding:10px 14px;margin-bottom:8px;
+      display:flex;align-items:center;gap:10px;
+    }
+    /* Section label gold */
+    .stk-wrap .g-lab {
+      color:var(--gold-d);font-size:11px;
+      letter-spacing:.07em;text-transform:uppercase;
+    }
+    /* Group chip gold active */
+    .stk-wrap .gchip.on {
+      background:linear-gradient(135deg,var(--gold-d),var(--gold));
+      border-color:var(--gold-d);color:#fff;
+    }
+    /* Stock row hover */
+    .stk-wrap .st-row:active { background:var(--gold-s); }
+    /* Section head gold */
+    .stk-wrap .st-head { color:var(--gold-d);font-size:11px;letter-spacing:.07em; }
+    /* Date input */
+    .stk-wrap input[type=date] {
+      background:var(--gold-s);border:1.5px solid rgba(184,150,74,.3);
+      color:var(--gold-d);font-size:13.5px;
+    }
+    .stk-wrap input[type=date]:focus { border-color:var(--gold); }
+    /* g-card gold top border variant */
+    .stk-gold-card {
+      background:var(--card);border:1.5px solid rgba(184,150,74,.25);
+      border-top:3px solid var(--gold);border-radius:14px;padding:18px;
+    }
+  `;
+  document.head.appendChild(s);
+}
+
 async function loadStock() {
   $('page').innerHTML = `<div class="loading-wrap"><div class="spin"></div><span>ກຳລັງໂຫຼດ...</span></div>`;
   try {
@@ -1326,6 +1405,7 @@ async function loadStock() {
     if (S.stkView     === undefined) S.stkView     = 'items';
     if (S.stkDate     === undefined) S.stkDate     = new Date().toISOString().slice(0,10);
     if (S.stkMainView === undefined) S.stkMainView = 'items';
+    injectStkStyles();
     drawStock();
   } catch (e) { $('page').innerHTML = `<div class="banner err">${esc(e.message)}</div>`; }
 }
@@ -1346,16 +1426,17 @@ function drawStock() {
   const ORIG_FLAG = {'ໄທ':'🇹🇭','ເກົາຫຼີ':'🇰🇷','ອື່ນໆ':'🌐'};
 
   const recentHtml = moves.length
-    ? moves.map(m=>`<div style="padding:11px 0;border-top:1px solid var(--line)">
-        <div style="display:flex;align-items:baseline;gap:8px">
-          <span style="flex:1;min-width:0;font-size:14px">${esc(m.item)}</span>
-          <span class="serif" style="font-size:17px;color:${MOVE_COLOR[m.kind]}">
-            ${m.kind==='out'?'−':(m.kind==='in'?'+':'')}${Math.abs(Number(m.qty)).toLocaleString()}</span>
+    ? moves.map(m=>`<div class="stk-hist-item">
+        <div style="flex:1;min-width:0">
+          <div style="font-size:14px;font-weight:600">${esc(m.item)}</div>
+          <div class="rk-sub" style="margin-top:3px">
+            ${MOVE_LABEL[m.kind]} · ${esc(m.who||'-')} · ${esc(m.at)}
+            ${m.note?` · ${esc(m.note)}`:''}
+          </div>
         </div>
-        <div class="rk-sub" style="margin-top:4px">
-          ${MOVE_LABEL[m.kind]} · ${esc(m.who||'-')} · ${esc(m.at)}
-          ${m.note?` · ${esc(m.note)}`:''}
-        </div></div>`).join('')
+        <span class="serif" style="font-size:17px;color:${MOVE_COLOR[m.kind]};flex-shrink:0">
+          ${m.kind==='out'?'−':(m.kind==='in'?'+':'')}${Math.abs(Number(m.qty)).toLocaleString()}</span>
+      </div>`).join('')
     : `<p class="rk-sub" style="padding:20px 0;text-align:center">ຍັງບໍ່ມີການເຄື່ອນໄຫວ</p>`;
 
   // ── ORIGIN SELECTION SCREEN ────────────────────────────────────
@@ -1376,10 +1457,9 @@ function drawStock() {
         out ? `<span style="background:#FBF1F0;color:#C23A5F;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700">● ໝົດ ${out}</span>` : '',
         low ? `<span style="background:#FEF5E3;color:#B07407;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700">● ໃກ້ໝົດ ${low}</span>` : ''
       ].filter(Boolean).join(' ');
-      return `<button onclick="setStkOrigin('${key}')"
-        style="display:flex;align-items:center;gap:14px;padding:16px 14px 16px 18px;background:var(--card);border:1.5px solid var(--line);border-radius:18px;width:100%;text-align:left;cursor:pointer;position:relative;overflow:hidden">
-        <div style="position:absolute;left:0;top:0;bottom:0;width:4px;background:${col}"></div>
-        <div style="width:50px;height:50px;border-radius:50%;background:${bg};display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0">${flag}</div>
+      return `<button class="stk-orig-card" onclick="setStkOrigin('${key}')">
+        <div class="stk-orig-accent" style="background:${col}"></div>
+        <div class="stk-flag-circle" style="background:${bg}">${flag}</div>
         <div style="flex:1;min-width:0">
           <div style="font-weight:700;font-size:18px;color:var(--ink);margin-bottom:3px">${label}</div>
           ${cats?`<div style="font-size:12px;color:var(--sub);margin-bottom:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${cats}</div>`:''}
@@ -1392,19 +1472,18 @@ function drawStock() {
         <span style="color:${col};flex-shrink:0">${CHV}</span>
       </button>`;
     };
-    const mainTabHtml = `<div style="display:flex;gap:8px;margin-bottom:16px;padding-top:2px">
+    const mainTabHtml = `<div class="seg stk-tabs" style="margin-bottom:16px">
       <button class="seg-btn ${S.stkMainView==='items'?'on':''}" style="flex:1" onclick="setStkMainView('items')">ລາຍການ</button>
       <button class="seg-btn ${S.stkMainView==='history'?'on':''}" style="flex:1" onclick="setStkMainView('history')">ປະຫວັດ</button>
     </div>`;
     if (S.stkMainView === 'history') {
-      $('page').innerHTML = `<div class="wrap">
+      $('page').innerHTML = `<div class="wrap stk-wrap">
         ${mainTabHtml}
-        <div class="g-card">
+        <div class="stk-gold-card">
           <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
             <div class="g-lab" style="flex:1">ປະຫວັດການເຄື່ອນໄຫວ (ທຸກແຫຼ່ງ)</div>
             <input type="date" id="stk-date" value="${S.stkDate}"
-              onchange="S.stkDate=this.value;loadStockHistory()"
-              style="border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-size:14px;background:var(--bg)">
+              onchange="S.stkDate=this.value;loadStockHistory()">
           </div>
           <div id="stk-hist-wrap"><div class="loading-wrap" style="min-height:80px"><div class="spin"></div></div></div>
         </div>
@@ -1412,16 +1491,16 @@ function drawStock() {
       loadStockHistory();
       return;
     }
-    $('page').innerHTML = `<div class="wrap">
+    $('page').innerHTML = `<div class="wrap stk-wrap">
       ${mainTabHtml}
       <div style="display:flex;flex-direction:column;gap:10px">
         ${origCard('ໄທ','🇹🇭','ໄທ')}
         ${origCard('ເກົາຫຼີ','🇰🇷','ເກົາຫຼີ')}
         ${origCard('ອື່ນໆ','🌐','ອື່ນໆ')}
       </div>
-      <div class="g-card" style="margin-top:16px">
-        <div class="g-lab">ເຄື່ອນໄຫວລ່າສຸດ</div>
-        <div style="margin-top:4px">${recentHtml}</div>
+      <div class="stk-gold-card" style="margin-top:16px">
+        <div class="g-lab" style="margin-bottom:10px">ເຄື່ອນໄຫວລ່າສຸດ</div>
+        ${recentHtml}
       </div>
     </div>`;
     return;
@@ -1438,17 +1517,16 @@ function drawStock() {
     `<button class="gchip ${S.stkGrp===key?'on':''}" onclick="setStkGrp('${key.replace(/'/g,"\\'")}')"
        ${color?`style="--c:${color}"`:''}>${esc(label)}<b>${n}</b></button>`;
 
-  $('page').innerHTML = `<div class="wrap">
+  $('page').innerHTML = `<div class="wrap stk-wrap">
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
-      <button onclick="setStkOrigin('all')"
-        style="display:flex;align-items:center;gap:5px;background:var(--card);border:1.5px solid var(--line);border-radius:10px;padding:7px 12px;font-size:13px;cursor:pointer;color:var(--sub)">
+      <button class="stk-back" onclick="setStkOrigin('all')">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m15 18-6-6 6-6"/></svg>ກັບ</button>
       <span style="font-size:22px">${ORIG_FLAG[stkOrig]||'🌐'}</span>
       <span style="font-weight:700;font-size:18px;color:var(--ink)">${esc(stkOrig)}</span>
     </div>
 
     <div class="kpi3" style="margin-bottom:16px">
-      <button class="g-card g-solid gk" style="background:var(--ink)" onclick="setStkGrp('all')">
+      <button class="g-card g-solid gk stk-kpi-gold" onclick="setStkGrp('all')">
         <div class="g-lab">ທັງໝົດ</div><div class="g-num">${origItems.length}</div></button>
       <button class="g-card g-solid gk" style="background:#C23A5F" onclick="setStkGrp('out')">
         <div class="g-lab">ໝົດ</div><div class="g-num">${nOut}</div></button>
@@ -1456,26 +1534,25 @@ function drawStock() {
         <div class="g-lab">ໃກ້ໝົດ</div><div class="g-num">${nLow}</div></button>
     </div>
 
-    <div style="display:flex;gap:8px;margin-bottom:14px">
+    <div class="seg stk-tabs" style="margin-bottom:14px">
       <button class="seg-btn ${S.stkView==='items'   ?'on':''}" style="flex:1" onclick="setStkView('items')">ລາຍການສາງ</button>
       <button class="seg-btn ${S.stkView==='history' ?'on':''}" style="flex:1" onclick="setStkView('history')">ປະຫວັດ</button>
     </div>
 
     <div class="grid gtop">
       ${S.stkView==='history' ? `
-      <div class="g-card c2">
+      <div class="stk-gold-card c2">
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
           <div class="g-lab" style="flex:1">ປະຫວັດການເຄື່ອນໄຫວ</div>
           <input type="date" id="stk-date" value="${S.stkDate}"
-            onchange="S.stkDate=this.value;loadStockHistory()"
-            style="border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-size:14px;background:var(--bg)">
+            onchange="S.stkDate=this.value;loadStockHistory()">
         </div>
         <div id="stk-hist-wrap"><div class="loading-wrap" style="min-height:80px"><div class="spin"></div></div></div>
       </div>` : `
       <div class="g-card c2" style="padding-bottom:8px">
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
           <div class="g-lab" style="flex:1">ລາຍການໃນສາງ</div>
-          ${r.can_edit ? `<button class="pill on" onclick="openStockItem()">${IC.plus} ເພີ່ມ</button>` : ''}
+          ${r.can_edit ? `<button class="btn-gold" onclick="openStockItem()">${IC.plus} ເພີ່ມ</button>` : ''}
         </div>
         <input type="search" id="stk-q" value="${esc(S.stkQ)}" placeholder="ຄົ້ນຫາຊື່ສິນຄ້າ..."
                oninput="S.stkQ=this.value;drawStockList()" autocomplete="off">
@@ -1808,8 +1885,7 @@ async function loadStockHistory() {
           ${kindLabel[k]} · ${groups[k].length} ລາຍການ</div>`;
       groups[k].forEach(m => {
         const sign = k === 'out' ? '−' : (k === 'in' ? '+' : '');
-        html += `<div style="background:var(--card);border-radius:10px;padding:10px 12px;
-            margin-bottom:8px;display:flex;align-items:center;gap:10px">
+        html += `<div class="stk-hist-item">
           <div style="flex:1;min-width:0">
             <div style="font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(m.item)}</div>
             <div style="font-size:11px;color:var(--sub);margin-top:2px">
