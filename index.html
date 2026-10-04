@@ -385,7 +385,7 @@ window.onerror = function(msg){
 /* ============================================================
    ຕັ້ງຄ່າ
    ============================================================ */
-const APP_VERSION = "20261002-1940";
+const APP_VERSION = "20261002-2010";
 const SB_URL = "https://arpxzwmuxcudpdvghvud.supabase.co";
 const SB_KEY = "sb_publishable_wrx_pshRtsqBh-Xvly1l_g_u-sf6yjv";
 
@@ -1322,9 +1322,10 @@ async function loadStock() {
     const r = await api('df_stock_list', {p_token: S.token});
     if (!r.ok) { $('page').innerHTML = `<div class="banner err">${esc(r.error)}</div>`; return; }
     S.cache.stock = r;
-    if (S.stkOrigin === undefined) S.stkOrigin = 'all';
-    if (S.stkView   === undefined) S.stkView   = 'items';
-    if (S.stkDate   === undefined) S.stkDate   = new Date().toISOString().slice(0,10);
+    if (S.stkOrigin   === undefined) S.stkOrigin   = 'all';
+    if (S.stkView     === undefined) S.stkView     = 'items';
+    if (S.stkDate     === undefined) S.stkDate     = new Date().toISOString().slice(0,10);
+    if (S.stkMainView === undefined) S.stkMainView = 'items';
     drawStock();
   } catch (e) { $('page').innerHTML = `<div class="banner err">${esc(e.message)}</div>`; }
 }
@@ -1391,8 +1392,28 @@ function drawStock() {
         <span style="color:${col};flex-shrink:0">${CHV}</span>
       </button>`;
     };
+    const mainTabHtml = `<div style="display:flex;gap:8px;margin-bottom:16px;padding-top:2px">
+      <button class="seg-btn ${S.stkMainView==='items'?'on':''}" style="flex:1" onclick="setStkMainView('items')">ລາຍການ</button>
+      <button class="seg-btn ${S.stkMainView==='history'?'on':''}" style="flex:1" onclick="setStkMainView('history')">ປະຫວັດ</button>
+    </div>`;
+    if (S.stkMainView === 'history') {
+      $('page').innerHTML = `<div class="wrap">
+        ${mainTabHtml}
+        <div class="g-card">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+            <div class="g-lab" style="flex:1">ປະຫວັດການເຄື່ອນໄຫວ (ທຸກແຫຼ່ງ)</div>
+            <input type="date" id="stk-date" value="${S.stkDate}"
+              onchange="S.stkDate=this.value;loadStockHistory()"
+              style="border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-size:14px;background:var(--bg)">
+          </div>
+          <div id="stk-hist-wrap"><div class="loading-wrap" style="min-height:80px"><div class="spin"></div></div></div>
+        </div>
+      </div>`;
+      loadStockHistory();
+      return;
+    }
     $('page').innerHTML = `<div class="wrap">
-      <div style="text-align:center;font-size:12px;color:var(--sub);letter-spacing:0.8px;text-transform:uppercase;margin-bottom:14px;padding-top:4px">ເລືອກແຫຼ່ງສິນຄ້າ</div>
+      ${mainTabHtml}
       <div style="display:flex;flex-direction:column;gap:10px">
         ${origCard('ໄທ','🇹🇭','ໄທ')}
         ${origCard('ເກົາຫຼີ','🇰🇷','ເກົາຫຼີ')}
@@ -1471,9 +1492,10 @@ function drawStock() {
   else { drawStockList(); }
 }
 
-function setStkGrp(g)    { S.stkGrp    = g; drawStock(); }
-function setStkOrigin(o) { S.stkOrigin = o; if (o !== 'all') S.stkGrp = 'all'; drawStock(); }
-function setStkView(v)   { S.stkView   = v; drawStock(); }
+function setStkGrp(g)      { S.stkGrp      = g; drawStock(); }
+function setStkOrigin(o)   { S.stkOrigin   = o; if (o !== 'all') S.stkGrp = 'all'; drawStock(); }
+function setStkView(v)     { S.stkView     = v; drawStock(); }
+function setStkMainView(v) { S.stkMainView = v; drawStock(); }
 
 function drawStockList() {
   const box = $('stk-list'); if (!box) return;
@@ -1614,9 +1636,15 @@ function openStockItem(id) {
       <input id="si-name" value="${it?esc(it.name):''}" placeholder="ເຊັ່ນ: Botox"></div>
     <div class="g2">
       <div class="field"><label class="lbl">ກຸ່ມ</label>
-        <select id="si-grp">
+        <select id="si-grp" onchange="onGrpChange()">
           ${(S.cache.stock.groups||[]).map(g=>`<option value="${esc(g)}" ${it&&it.grp===g?'selected':''}>${esc(g)}</option>`).join('')}
-        </select></div>
+          <option value="__new__">+ ເພີ່ມກຸ່ມໃໝ່...</option>
+        </select>
+        <input id="si-grp-new" placeholder="ຊື່ກຸ່ມໃໝ່" autocomplete="off"
+          style="display:none;margin-top:6px">
+        <button type="button" onclick="openGrpMgr()"
+          style="margin-top:5px;width:100%;background:var(--card);border:1.5px solid var(--line);border-radius:8px;padding:5px 8px;font-size:12px;cursor:pointer;color:var(--sub);text-align:center">ຈັດການກຸ່ມ...</button>
+      </div>
       <div class="field"><label class="lbl">ແຫຼ່ງທີ່ມາ</label>
         <select id="si-origin">
           ${origins.map(o=>`<option value="${esc(o)}" ${(it?it.origin===o:o==='ອື່ນໆ')?'selected':''}>${esc(o)}</option>`).join('')}
@@ -1642,6 +1670,53 @@ function openStockItem(id) {
 }
 function closeStockItem(){ const o=$('siOv'); if(o) o.remove(); }
 
+function onGrpChange() {
+  const sel=$('si-grp'), inp=$('si-grp-new');
+  if (!inp) return;
+  if (sel && sel.value==='__new__') { inp.style.display=''; setTimeout(()=>inp.focus(),50); }
+  else inp.style.display='none';
+}
+
+function openGrpMgr() {
+  const groups=S.cache.stock.groups||[], items=S.cache.stock.items||[];
+  const cnt={}; items.forEach(i=>{cnt[i.grp]=(cnt[i.grp]||0)+1;});
+  const rows=groups.length ? groups.map(g=>{
+    const n=cnt[g]||0;
+    return `<div style="display:flex;align-items:center;gap:10px;padding:11px 0;border-top:1px solid var(--line)">
+      <span style="flex:1;font-size:15px">${esc(g)}</span>
+      <span style="font-size:12px;color:var(--sub)">${n} ລາຍການ</span>
+      <button onclick="deleteGroup('${g.replace(/\\/g,'\\\\').replace(/'/g,"\\'")}',${n})"
+        style="background:var(--card);border:1.5px solid #EBD8D6;color:var(--red);border-radius:8px;padding:5px 10px;font-size:12px;cursor:pointer">ລຶບ</button>
+    </div>`;
+  }).join('') : `<p style="text-align:center;color:var(--sub);padding:20px 0">ຍັງບໍ່ມີກຸ່ມ</p>`;
+  const ov=document.createElement('div'); ov.className='overlay'; ov.id='grpOv';
+  ov.onclick=e=>{if(e.target===ov)closeGrpMgr();};
+  ov.innerHTML=`<div class="sheet"><div class="handle"></div>
+    <h3>ຈັດການກຸ່ມ</h3>
+    <div>${rows}</div>
+    <button class="btn-o" style="margin-top:14px" onclick="closeGrpMgr()">ປິດ</button>
+  </div>`;
+  document.body.appendChild(ov);
+}
+function closeGrpMgr(){const o=$('grpOv');if(o)o.remove();}
+
+function deleteGroup(grp,count){
+  if(count>0){toast('ມີ '+count+' ລາຍການໃນກຸ່ມນີ້ — ກາລຸນາປ່ຽນກຸ່ມຂອງລາຍການທັງໝົດກ່ອນ',false);return;}
+  if(!confirm('ລຶບກຸ່ມ "'+grp+'"?'))return;
+  S.cache.stock.groups=(S.cache.stock.groups||[]).filter(g=>g!==grp);
+  closeGrpMgr();
+  const sel=$('si-grp');
+  if(sel){
+    const cur=sel.value;
+    sel.innerHTML=(S.cache.stock.groups||[]).map(g=>`<option value="${esc(g)}">${esc(g)}</option>`).join('')+'<option value="__new__">+ ເພີ່ມກຸ່ມໃໝ່...</option>';
+    if(cur!==grp&&(S.cache.stock.groups||[]).includes(cur)) sel.value=cur;
+    else if(S.cache.stock.groups&&S.cache.stock.groups.length) sel.value=S.cache.stock.groups[0];
+    else sel.value='__new__';
+    onGrpChange();
+  }
+  toast('ລຶບກຸ່ມ "'+grp+'" ແລ້ວ');
+}
+
 async function delStockItem(id, name) {
   if (!confirm('ລຶບ "' + name + '" ອອກຈາກສາງຢາ?\n\nຖ້າເຄີຍມີການຮັບເຂົ້າ/ເບີກອອກ ລະບົບຈະເຊື່ອງໄວ້ ແທນການລຶບ ເພື່ອຮັກສາປະຫວັດ')) return;
   try {
@@ -1654,6 +1729,12 @@ async function delStockItem(id, name) {
 async function saveStockItem(id) {
   const name = $('si-name').value.trim();
   if (!name) return toast('ກະລຸນາໃສ່ຊື່ລາຍການ', false);
+  const grpSel = $('si-grp');
+  let grpVal = grpSel ? grpSel.value : null;
+  if (grpVal === '__new__') {
+    grpVal = $('si-grp-new') ? $('si-grp-new').value.trim() : '';
+    if (!grpVal) return toast('ກະລຸນາໃສ່ຊື່ກຸ່ມໃໝ່', false);
+  }
   const act    = $('si-active');
   const imgInp = $('si-img');
   let img_url  = null;
@@ -1668,7 +1749,7 @@ async function saveStockItem(id) {
     const params = {p_token: S.token, p_id: id,
       p_name: name, p_unit: $('si-unit').value,
       p_min: Number($('si-min').value)||0,
-      p_grp:    ($('si-grp')    ? $('si-grp').value    : null),
+      p_grp:    grpVal,
       p_origin: ($('si-origin') ? $('si-origin').value : null),
       p_active: act ? act.checked : true};
     if (img_url) params.p_img_url = img_url;
