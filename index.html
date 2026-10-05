@@ -385,7 +385,7 @@ window.onerror = function(msg){
 /* ============================================================
    ຕັ້ງຄ່າ
    ============================================================ */
-const APP_VERSION = "20261004-1430";
+const APP_VERSION = "20261005-0945";
 const SB_URL = "https://arpxzwmuxcudpdvghvud.supabase.co";
 const SB_KEY = "sb_publishable_wrx_pshRtsqBh-Xvly1l_g_u-sf6yjv";
 
@@ -1322,75 +1322,139 @@ function injectStkStyles() {
   s.id = 'stk-css';
   s.textContent = `
     :root { --gold:#B8964A; --gold-l:#D4AF6E; --gold-s:#F0E8D5; --gold-d:#8C7038; }
-    /* Origin cards */
-    .stk-orig-card {
-      display:flex;align-items:center;gap:14px;
-      padding:18px 16px 18px 22px;
-      background:var(--card);border:1.5px solid var(--line);
-      border-radius:16px;width:100%;text-align:left;cursor:pointer;
-      position:relative;overflow:hidden;transition:border-color .2s,box-shadow .2s;
+
+    /* ===== 4-TILE STAT GRID ===== */
+    .stk-4tiles { display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px; }
+    @media(max-width:520px) { .stk-4tiles { grid-template-columns:repeat(2,1fr); } }
+    .stk-tile {
+      background:var(--card);border-radius:11px;
+      padding:13px 14px;cursor:pointer;text-align:left;
+      border:1px solid var(--line);
+      transition:opacity .15s,box-shadow .15s;
+      position:relative;overflow:hidden;
     }
-    .stk-orig-card:active { border-color:var(--gold);box-shadow:0 2px 12px rgba(184,150,74,.12); }
-    .stk-orig-accent { position:absolute;left:0;top:0;bottom:0;width:4px; }
-    .stk-flag-circle {
-      width:52px;height:52px;border-radius:50%;
-      display:flex;align-items:center;justify-content:center;
-      font-size:26px;flex-shrink:0;
+    .stk-tile::before {
+      content:'';position:absolute;top:0;left:0;bottom:0;width:3px;
     }
-    /* Gold tab bar */
-    .stk-tabs { background:var(--gold-s)!important; border:1.5px solid rgba(184,150,74,.28)!important; }
+    .stk-tile:active { opacity:.75; }
+    .stk-tile.active { box-shadow:0 2px 14px rgba(0,0,0,.08); }
+    .stk-tile.active::after {
+      content:'';position:absolute;inset:0;border-radius:11px;
+      border:2px solid var(--tile-color,var(--gold));pointer-events:none;
+    }
+    .stk-tile-lbl { font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);margin-bottom:5px; }
+    .stk-tile-val { font-size:24px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums; }
+    .stk-tile-pct { font-size:11px;color:var(--text3);margin-top:4px; }
+
+    /* ===== GOLD TAB BAR ===== */
+    .stk-tabs { background:var(--gold-s)!important;border:1.5px solid rgba(184,150,74,.28)!important; }
     .stk-tabs .seg-btn { color:var(--gold-d); }
     .stk-tabs .seg-btn.on {
       background:linear-gradient(135deg,var(--gold-d) 0%,var(--gold) 100%)!important;
       color:#fff!important;border:none!important;font-weight:700;
     }
-    /* KPI gold tile */
-    .stk-kpi-gold { background:linear-gradient(135deg,var(--gold-d) 0%,var(--gold-l) 100%)!important; }
-    /* Back button */
-    .stk-back {
-      display:flex;align-items:center;gap:6px;
-      background:var(--gold-s);border:1.5px solid rgba(184,150,74,.45);
-      border-radius:10px;padding:8px 14px;font-size:13.5px;cursor:pointer;
-      color:var(--gold-d);font-weight:700;
+
+    /* ===== FILTER ROW ===== */
+    .stk-filter-row {
+      display:flex;gap:8px;margin-bottom:14px;
+      flex-wrap:wrap;align-items:center;
     }
-    /* Gold add button */
+    .stk-filter-row input[type=search] { flex:1;min-width:130px; }
+    .stk-filter-sel {
+      padding:8px 10px;border-radius:8px;
+      border:1.5px solid var(--line);
+      background:var(--card);color:var(--text);font-size:13px;cursor:pointer;
+    }
+    .stk-filter-sel:focus { border-color:var(--gold);outline:none; }
+
+    /* ===== 2-COL CONTENT LAYOUT ===== */
+    .stk-content-layout {
+      display:grid;grid-template-columns:1fr 265px;gap:14px;align-items:start;
+    }
+    @media(max-width:680px) { .stk-content-layout { grid-template-columns:1fr; } }
+
+    /* ===== TABLE CARD ===== */
+    .stk-table-wrap {
+      background:var(--card);border:1px solid var(--line);
+      border-radius:13px;overflow:hidden;
+    }
+    .stk-table-hd {
+      padding:12px 16px 10px;display:flex;align-items:center;
+      justify-content:space-between;border-bottom:1px solid var(--line);
+    }
+    .stk-table-ttl {
+      font-size:11.5px;font-weight:600;text-transform:uppercase;
+      letter-spacing:.5px;color:var(--gold-d);
+    }
+    .stk-table-scroll { overflow-x:auto; }
+    .stk-tbl { width:100%;border-collapse:collapse;min-width:380px; }
+    .stk-tbl th {
+      font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;
+      color:var(--text3);padding:9px 13px;text-align:left;
+      background:var(--bg);border-bottom:1px solid var(--line);white-space:nowrap;
+    }
+    .stk-tbl td {
+      padding:10px 13px;font-size:13px;
+      border-bottom:1px solid var(--line);vertical-align:middle;
+    }
+    .stk-tbl tr:last-child td { border-bottom:none; }
+    .stk-tbl tbody tr { cursor:pointer;transition:background .1s; }
+    .stk-tbl tbody tr:hover td { background:rgba(184,150,74,.04); }
+    .stk-tbl tbody tr:active td { background:var(--gold-s); }
+
+    /* ===== STATUS BADGE ===== */
+    .stk-badge {
+      display:inline-block;padding:2px 8px;border-radius:5px;
+      font-size:11px;font-weight:600;white-space:nowrap;
+    }
+
+    /* ===== SIDE PANEL ===== */
+    .stk-side-card {
+      background:var(--card);border:1px solid var(--line);
+      border-top:3px solid var(--gold);border-radius:13px;overflow:hidden;
+    }
+    .stk-side-hd { padding:12px 16px 10px;border-bottom:1px solid var(--line); }
+    .stk-side-ttl {
+      font-size:11.5px;font-weight:600;text-transform:uppercase;
+      letter-spacing:.5px;color:var(--gold-d);
+    }
+    .stk-side-bd { padding:12px 14px; }
+
+    /* ===== SECTION CARDS (history view) ===== */
+    .stk-section-card {
+      background:var(--card);border:1px solid var(--line);
+      border-top:3px solid var(--gold);border-radius:13px;overflow:hidden;
+    }
+    .stk-section-hd {
+      padding:12px 16px 10px;display:flex;align-items:center;
+      justify-content:space-between;border-bottom:1px solid var(--line);
+    }
+    .stk-section-ttl {
+      font-size:11.5px;font-weight:600;text-transform:uppercase;
+      letter-spacing:.5px;color:var(--gold-d);
+    }
+    .stk-section-bd { padding:14px 16px; }
+
+    /* ===== MOVE HISTORY ITEMS ===== */
+    .stk-hist-item {
+      background:var(--card);border:1px solid var(--line);
+      border-radius:10px;padding:10px 12px;margin-bottom:8px;
+      display:flex;align-items:center;gap:10px;
+    }
+    .stk-hist-item:last-child { margin-bottom:0; }
+
+    /* ===== GOLD ADD BUTTON ===== */
     .btn-gold {
       background:linear-gradient(135deg,var(--gold-d) 0%,var(--gold-l) 100%);
       color:#fff;font-weight:700;border:none;
-      padding:9px 16px;border-radius:8px;font-size:13.5px;
-      display:inline-flex;align-items:center;gap:6px;cursor:pointer;
+      padding:8px 14px;border-radius:8px;font-size:13px;
+      display:inline-flex;align-items:center;gap:6px;cursor:pointer;white-space:nowrap;
     }
-    /* Move history item card */
-    .stk-hist-item {
-      background:var(--card);border:1px solid var(--line);
-      border-radius:10px;padding:10px 14px;margin-bottom:8px;
-      display:flex;align-items:center;gap:10px;
-    }
-    /* Section label gold */
-    .stk-wrap .g-lab {
-      color:var(--gold-d);font-size:11px;
-      letter-spacing:.07em;text-transform:uppercase;
-    }
-    /* Group chip gold active */
-    .stk-wrap .gchip.on {
-      background:linear-gradient(135deg,var(--gold-d),var(--gold));
-      border-color:var(--gold-d);color:#fff;
-    }
-    /* Stock row hover */
-    .stk-wrap .st-row:active { background:var(--gold-s); }
-    /* Section head gold */
-    .stk-wrap .st-head { color:var(--gold-d);font-size:11px;letter-spacing:.07em; }
-    /* Date input */
-    .stk-wrap input[type=date] {
-      background:var(--gold-s);border:1.5px solid rgba(184,150,74,.3);
-      color:var(--gold-d);font-size:13.5px;
-    }
+    .btn-gold:active { opacity:.85; }
+
+    /* ===== MISC ===== */
+    .stk-wrap input[type=date] { background:var(--gold-s);border:1.5px solid rgba(184,150,74,.3);color:var(--gold-d);font-size:13.5px; }
     .stk-wrap input[type=date]:focus { border-color:var(--gold); }
-    /* g-card gold top border variant */
-    .stk-gold-card {
-      background:var(--card);border:1.5px solid rgba(184,150,74,.25);
-      border-top:3px solid var(--gold);border-radius:14px;padding:18px;
-    }
   `;
   document.head.appendChild(s);
 }
@@ -1405,6 +1469,9 @@ async function loadStock() {
     if (S.stkView     === undefined) S.stkView     = 'items';
     if (S.stkDate     === undefined) S.stkDate     = new Date().toISOString().slice(0,10);
     if (S.stkMainView === undefined) S.stkMainView = 'items';
+    if (S.stkGrp      === undefined) S.stkGrp      = 'all';
+    if (S.stkQ        === undefined) S.stkQ        = '';
+    if (S.stkStatus   === undefined) S.stkStatus   = 'all';
     injectStkStyles();
     drawStock();
   } catch (e) { $('page').innerHTML = `<div class="banner err">${esc(e.message)}</div>`; }
@@ -1422,168 +1489,148 @@ function stockState(it) {
 function drawStock() {
   const r = S.cache.stock, items = r.items || [], moves = r.recent || [];
   const groups = r.groups || [];
-  const stkOrig = S.stkOrigin || 'all';
-  const ORIG_FLAG = {'ໄທ':'🇹🇭','ເກົາຫຼີ':'🇰🇷','ອື່ນໆ':'🌐'};
+  const mainView = S.stkMainView || 'items';
+
+  // ── STAT TILE COUNTS (across all items, no filter for the tiles) ──
+  const nAll = items.length;
+  const nOut = items.filter(x => Number(x.qty) <= 0).length;
+  const nLow = items.filter(x => Number(x.qty) > 0 && Number(x.qty) <= Number(x.min_qty)).length;
+  const nOk  = nAll - nOut - nLow;
+  const pctOk  = nAll ? Math.round(nOk / nAll * 100)  : 0;
+  const pctLow = nAll ? Math.round(nLow / nAll * 100) : 0;
+  const pctOut = nAll ? Math.round(nOut / nAll * 100)  : 0;
+
+  const mkTile = (status, label, count, pct, color, borderColor) => {
+    const isActive = (S.stkStatus || 'all') === status;
+    return `<button class="stk-tile${isActive?' active':''}"
+      style="--tile-color:${color}"
+      onclick="setStkStatus('${status}')">
+      <div style="position:absolute;top:0;left:0;bottom:0;width:3px;background:${borderColor};border-radius:3px 0 0 3px"></div>
+      <div class="stk-tile-lbl" style="padding-left:6px">${label}</div>
+      <div class="stk-tile-val" style="color:${color};padding-left:6px">${count}</div>
+      <div class="stk-tile-pct" style="padding-left:6px">${pct}%</div>
+    </button>`;
+  };
+
+  const tilesHtml = `<div class="stk-4tiles">
+    ${mkTile('all','ທັງໝົດ', nAll, 100, 'var(--gold)', 'var(--gold)')}
+    ${mkTile('ok','ປົກກະຕິ', nOk, pctOk, '#1B8C6E', '#22A06B')}
+    ${mkTile('low','ໃກ້ໝົດ', nLow, pctLow, '#B07407', '#E0930B')}
+    ${mkTile('out','ໝົດ', nOut, pctOut, '#C23A5F', '#C23A5F')}
+  </div>`;
+
+  const tabHtml = `<div class="seg stk-tabs" style="margin-bottom:14px">
+    <button class="seg-btn ${mainView==='items'?'on':''}" style="flex:1" onclick="setStkMainView('items')">ລາຍການ</button>
+    <button class="seg-btn ${mainView==='history'?'on':''}" style="flex:1" onclick="setStkMainView('history')">ປະຫວັດ</button>
+  </div>`;
+
+  // ── HISTORY TAB ───────────────────────────────────────────────
+  if (mainView === 'history') {
+    $('page').innerHTML = `<div class="wrap stk-wrap">
+      ${tilesHtml}
+      ${tabHtml}
+      <div class="stk-section-card">
+        <div class="stk-section-hd">
+          <span class="stk-section-ttl">ປະຫວັດການເຄື່ອນໄຫວ</span>
+          <input type="date" id="stk-date" value="${S.stkDate}"
+            onchange="S.stkDate=this.value;loadStockHistory()">
+        </div>
+        <div class="stk-section-bd" id="stk-hist-wrap">
+          <div class="loading-wrap" style="min-height:80px"><div class="spin"></div></div>
+        </div>
+      </div>
+    </div>`;
+    loadStockHistory();
+    return;
+  }
+
+  // ── ITEMS TAB ─────────────────────────────────────────────────
+  const origSel = S.stkOrigin || 'all';
+  const grpSel  = S.stkGrp    || 'all';
+
+  const origOptions = [
+    `<option value="all"${origSel==='all'?' selected':''}>ທຸກແຫຼ່ງ</option>`,
+    `<option value="ໄທ"${origSel==='ໄທ'?' selected':''}>🇹🇭 ໄທ</option>`,
+    `<option value="ເກົາຫຼີ"${origSel==='ເກົາຫຼີ'?' selected':''}>🇰🇷 ເກົາຫຼີ</option>`,
+    `<option value="ອື່ນໆ"${origSel==='ອື່ນໆ'?' selected':''}>🌐 ອື່ນໆ</option>`
+  ].join('');
+
+  const grpOptions = `<option value="all"${grpSel==='all'?' selected':''}>ທຸກກຸ່ມ</option>` +
+    groups.map(g=>`<option value="${esc(g)}"${grpSel===g?' selected':''}>${esc(g)}</option>`).join('');
 
   const recentHtml = moves.length
     ? moves.map(m=>`<div class="stk-hist-item">
         <div style="flex:1;min-width:0">
-          <div style="font-size:14px;font-weight:600">${esc(m.item)}</div>
-          <div class="rk-sub" style="margin-top:3px">
-            ${MOVE_LABEL[m.kind]} · ${esc(m.who||'-')} · ${esc(m.at)}
-            ${m.note?` · ${esc(m.note)}`:''}
-          </div>
+          <div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(m.item)}</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:2px">${MOVE_LABEL[m.kind]||m.kind} · ${esc(m.who||'-')}</div>
         </div>
-        <span class="serif" style="font-size:17px;color:${MOVE_COLOR[m.kind]};flex-shrink:0">
+        <span style="font-size:14px;font-weight:700;color:${MOVE_COLOR[m.kind]};flex-shrink:0">
           ${m.kind==='out'?'−':(m.kind==='in'?'+':'')}${Math.abs(Number(m.qty)).toLocaleString()}</span>
       </div>`).join('')
-    : `<p class="rk-sub" style="padding:20px 0;text-align:center">ຍັງບໍ່ມີການເຄື່ອນໄຫວ</p>`;
-
-  // ── ORIGIN SELECTION SCREEN ────────────────────────────────────
-  if (stkOrig === 'all') {
-    const ORIG_COLOR = {'ໄທ':'#1B8C6E','ເກົາຫຼີ':'#C0392B','ອື່ນໆ':'#B8964A'};
-    const ORIG_BG    = {'ໄທ':'#EAF7F3','ເກົາຫຼີ':'#FDF0EF','ອື່ນໆ':'#FDF8EE'};
-    const CHV = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 18 6-6-6-6"/></svg>`;
-    const origCard = (key, flag, label) => {
-      const its  = items.filter(i => i.origin === key);
-      const out  = its.filter(x => Number(x.qty) <= 0).length;
-      const low  = its.filter(x => Number(x.qty) > 0 && Number(x.qty) <= Number(x.min_qty)).length;
-      const col  = ORIG_COLOR[key]||'#888';
-      const bg   = ORIG_BG[key]||'#f5f5f5';
-      const catCnt = {};
-      its.forEach(i=>{ catCnt[i.grp]=(catCnt[i.grp]||0)+1; });
-      const cats = Object.entries(catCnt).map(([g,n])=>`${g} ${n}`).join(' · ');
-      const dots = [
-        out ? `<span style="background:#FBF1F0;color:#C23A5F;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700">● ໝົດ ${out}</span>` : '',
-        low ? `<span style="background:#FEF5E3;color:#B07407;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700">● ໃກ້ໝົດ ${low}</span>` : ''
-      ].filter(Boolean).join(' ');
-      return `<button class="stk-orig-card" onclick="setStkOrigin('${key}')">
-        <div class="stk-orig-accent" style="background:${col}"></div>
-        <div class="stk-flag-circle" style="background:${bg}">${flag}</div>
-        <div style="flex:1;min-width:0">
-          <div style="font-weight:700;font-size:18px;color:var(--ink);margin-bottom:3px">${label}</div>
-          ${cats?`<div style="font-size:12px;color:var(--sub);margin-bottom:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${cats}</div>`:''}
-          ${dots?`<div style="display:flex;gap:5px;flex-wrap:wrap">${dots}</div>`:''}
-        </div>
-        <div style="display:flex;flex-direction:column;align-items:flex-end;flex-shrink:0;margin-right:4px">
-          <span style="font-size:28px;font-weight:800;color:${col};line-height:1">${its.length}</span>
-          <span style="font-size:11px;color:var(--sub)">ລາຍການ</span>
-        </div>
-        <span style="color:${col};flex-shrink:0">${CHV}</span>
-      </button>`;
-    };
-    const mainTabHtml = `<div class="seg stk-tabs" style="margin-bottom:16px">
-      <button class="seg-btn ${S.stkMainView==='items'?'on':''}" style="flex:1" onclick="setStkMainView('items')">ລາຍການ</button>
-      <button class="seg-btn ${S.stkMainView==='history'?'on':''}" style="flex:1" onclick="setStkMainView('history')">ປະຫວັດ</button>
-    </div>`;
-    if (S.stkMainView === 'history') {
-      $('page').innerHTML = `<div class="wrap stk-wrap">
-        ${mainTabHtml}
-        <div class="stk-gold-card">
-          <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
-            <div class="g-lab" style="flex:1">ປະຫວັດການເຄື່ອນໄຫວ (ທຸກແຫຼ່ງ)</div>
-            <input type="date" id="stk-date" value="${S.stkDate}"
-              onchange="S.stkDate=this.value;loadStockHistory()">
-          </div>
-          <div id="stk-hist-wrap"><div class="loading-wrap" style="min-height:80px"><div class="spin"></div></div></div>
-        </div>
-      </div>`;
-      loadStockHistory();
-      return;
-    }
-    $('page').innerHTML = `<div class="wrap stk-wrap">
-      ${mainTabHtml}
-      <div style="display:flex;flex-direction:column;gap:10px">
-        ${origCard('ໄທ','🇹🇭','ໄທ')}
-        ${origCard('ເກົາຫຼີ','🇰🇷','ເກົາຫຼີ')}
-        ${origCard('ອື່ນໆ','🌐','ອື່ນໆ')}
-      </div>
-      <div class="stk-gold-card" style="margin-top:16px">
-        <div class="g-lab" style="margin-bottom:10px">ເຄື່ອນໄຫວລ່າສຸດ</div>
-        ${recentHtml}
-      </div>
-    </div>`;
-    return;
-  }
-
-  // ── DRILL-DOWN VIEW ────────────────────────────────────────────
-  const origItems = items.filter(i => i.origin === stkOrig);
-  const nOut = origItems.filter(x=>Number(x.qty)<=0).length;
-  const nLow = origItems.filter(x=>Number(x.qty)>0 && Number(x.qty)<=Number(x.min_qty)).length;
-
-  const cnt = {};
-  origItems.forEach(function(it){ cnt[it.grp] = (cnt[it.grp]||0) + 1; });
-  const chip = (key, label, n, color) =>
-    `<button class="gchip ${S.stkGrp===key?'on':''}" onclick="setStkGrp('${key.replace(/'/g,"\\'")}')"
-       ${color?`style="--c:${color}"`:''}>${esc(label)}<b>${n}</b></button>`;
+    : `<p style="text-align:center;color:var(--text3);padding:20px 0;font-size:13px">ຍັງບໍ່ມີ</p>`;
 
   $('page').innerHTML = `<div class="wrap stk-wrap">
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
-      <button class="stk-back" onclick="setStkOrigin('all')">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m15 18-6-6 6-6"/></svg>ກັບ</button>
-      <span style="font-size:22px">${ORIG_FLAG[stkOrig]||'🌐'}</span>
-      <span style="font-weight:700;font-size:18px;color:var(--ink)">${esc(stkOrig)}</span>
+    ${tilesHtml}
+    ${tabHtml}
+    <div class="stk-filter-row">
+      <input type="search" id="stk-q" value="${esc(S.stkQ||'')}" placeholder="ຄົ້ນຫາ..."
+             oninput="S.stkQ=this.value;drawStockList()" autocomplete="off">
+      <select class="stk-filter-sel" onchange="setStkOrigin(this.value)">${origOptions}</select>
+      <select class="stk-filter-sel" onchange="setStkGrp(this.value)">${grpOptions}</select>
+      ${r.can_edit ? `<button class="btn-gold" onclick="openStockItem()">${IC.plus} ເພີ່ມ</button>` : ''}
     </div>
-
-    <div class="kpi3" style="margin-bottom:16px">
-      <button class="g-card g-solid gk stk-kpi-gold" onclick="setStkGrp('all')">
-        <div class="g-lab">ທັງໝົດ</div><div class="g-num">${origItems.length}</div></button>
-      <button class="g-card g-solid gk" style="background:#C23A5F" onclick="setStkGrp('out')">
-        <div class="g-lab">ໝົດ</div><div class="g-num">${nOut}</div></button>
-      <button class="g-card g-solid gk" style="background:#E0930B" onclick="setStkGrp('low')">
-        <div class="g-lab">ໃກ້ໝົດ</div><div class="g-num">${nLow}</div></button>
-    </div>
-
-    <div class="seg stk-tabs" style="margin-bottom:14px">
-      <button class="seg-btn ${S.stkView==='items'   ?'on':''}" style="flex:1" onclick="setStkView('items')">ລາຍການສາງ</button>
-      <button class="seg-btn ${S.stkView==='history' ?'on':''}" style="flex:1" onclick="setStkView('history')">ປະຫວັດ</button>
-    </div>
-
-    <div class="grid gtop">
-      ${S.stkView==='history' ? `
-      <div class="stk-gold-card c2">
-        <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
-          <div class="g-lab" style="flex:1">ປະຫວັດການເຄື່ອນໄຫວ</div>
-          <input type="date" id="stk-date" value="${S.stkDate}"
-            onchange="S.stkDate=this.value;loadStockHistory()">
+    <div class="stk-content-layout">
+      <div class="stk-table-wrap">
+        <div class="stk-table-hd">
+          <span class="stk-table-ttl">ລາຍການສາງ</span>
+          <span id="stk-count-lbl" style="font-size:12px;color:var(--text3)"></span>
         </div>
-        <div id="stk-hist-wrap"><div class="loading-wrap" style="min-height:80px"><div class="spin"></div></div></div>
-      </div>` : `
-      <div class="g-card c2" style="padding-bottom:8px">
-        <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
-          <div class="g-lab" style="flex:1">ລາຍການໃນສາງ</div>
-          ${r.can_edit ? `<button class="btn-gold" onclick="openStockItem()">${IC.plus} ເພີ່ມ</button>` : ''}
+        <div class="stk-table-scroll">
+          <div id="stk-list"></div>
         </div>
-        <input type="search" id="stk-q" value="${esc(S.stkQ)}" placeholder="ຄົ້ນຫາຊື່ສິນຄ້າ..."
-               oninput="S.stkQ=this.value;drawStockList()" autocomplete="off">
-        <div class="gchips">
-          ${chip('all','ທັງໝົດ', origItems.length)}
-          ${groups.filter(g=>cnt[g]).map(g=>chip(g, g, cnt[g])).join('')}
+      </div>
+      <div class="stk-side-card">
+        <div class="stk-side-hd">
+          <div class="stk-side-ttl">ເຄື່ອນໄຫວລ່າສຸດ</div>
         </div>
-        <div id="stk-list"></div>
-      </div>`}
+        <div class="stk-side-bd">${recentHtml}</div>
+      </div>
     </div>
   </div>`;
 
-  if (S.stkView === 'history') { loadStockHistory(); }
-  else { drawStockList(); }
+  drawStockList();
 }
 
-function setStkGrp(g)      { S.stkGrp      = g; drawStock(); }
-function setStkOrigin(o)   { S.stkOrigin   = o; if (o !== 'all') S.stkGrp = 'all'; drawStock(); }
-function setStkView(v)     { S.stkView     = v; drawStock(); }
+function setStkGrp(g)      { S.stkGrp    = g; drawStockList(); }
+function setStkOrigin(o)   { S.stkOrigin = o; drawStockList(); }
+function setStkView(v)     { S.stkView   = v; drawStock(); }
 function setStkMainView(v) { S.stkMainView = v; drawStock(); }
+function setStkStatus(s)   { S.stkStatus = s; drawStock(); }
 
 function drawStockList() {
   const box = $('stk-list'); if (!box) return;
   const items = (S.cache.stock.items || []);
-  const q = S.stkQ.trim().toLowerCase();
-  const stkOrig = S.stkOrigin || 'all';
+  const q = (S.stkQ||'').trim().toLowerCase();
+  const stkOrig   = S.stkOrigin || 'all';
+  const stkGrp    = S.stkGrp    || 'all';
+  const stkStatus = S.stkStatus || 'all';
+
+  // normalise raw DB origin → canonical Lao label (handles English abbreviations too)
+  const ORIG_NORM = {
+    'ໄທ':'ໄທ','TH':'ໄທ','Thai':'ໄທ','thai':'ໄທ',
+    'ເກົາຫຼີ':'ເກົາຫຼີ','KR':'ເກົາຫຼີ','Korea':'ເກົາຫຼີ','korea':'ເກົາຫຼີ',
+    'ອື່ນໆ':'ອື່ນໆ'
+  };
+  const ORIG_FLAG = {'ໄທ':'🇹🇭','ເກົາຫຼີ':'🇰🇷','ອື່ນໆ':'🌐'};
+  const normOrig = o => ORIG_NORM[o] || 'ອື່ນໆ';
+
   const shown = items.filter(function(it){
-    if (S.stkGrp === 'out' && Number(it.qty) > 0) return false;
-    if (S.stkGrp === 'low' && !(Number(it.qty) > 0 && Number(it.qty) <= Number(it.min_qty))) return false;
-    if (S.stkGrp !== 'all' && S.stkGrp !== 'out' && S.stkGrp !== 'low' && it.grp !== S.stkGrp) return false;
-    if (stkOrig !== 'all' && it.origin !== stkOrig) return false;
+    if (stkOrig !== 'all' && normOrig(it.origin) !== stkOrig) return false;
+    if (stkGrp  !== 'all' && it.grp   !== stkGrp)  return false;
+    const qty = Number(it.qty), minQ = Number(it.min_qty);
+    if (stkStatus === 'out' && !(qty <= 0))          return false;
+    if (stkStatus === 'low' && !(qty > 0 && qty <= minQ)) return false;
+    if (stkStatus === 'ok'  && !(qty > minQ))        return false;
     if (q) {
       const hay = (String(it.name)+' '+String(it.grp||'')+' '+String(it.unit||'')+' '+String(it.origin||'')).toLowerCase();
       if (hay.indexOf(q) < 0) return false;
@@ -1591,32 +1638,59 @@ function drawStockList() {
     return true;
   });
 
+  // Update count label
+  const cl = $('stk-count-lbl');
+  if (cl) cl.textContent = shown.length + ' ລາຍການ';
+
   if (!shown.length) {
-    box.innerHTML = `<div class="empty">${IC.box}<p>${q?'ບໍ່ພົບ "'+esc(S.stkQ)+'"':'ບໍ່ມີລາຍການໃນກຸ່ມນີ້'}</p></div>`;
+    box.innerHTML = `<div class="empty" style="padding:30px 16px">${IC.box}<p>${q?'ບໍ່ພົບ "'+esc(S.stkQ||'')+'"':'ບໍ່ມີລາຍການ'}</p></div>`;
     return;
   }
 
-  let last = null, html = '';
+  let html = `<table class="stk-tbl">
+    <thead><tr>
+      <th style="width:52px"></th>
+      <th>ຊື່ລາຍການ</th>
+      <th>ກຸ່ມ</th>
+      <th style="text-align:center">ແຫຼ່ງ</th>
+      <th style="text-align:right">ຈຳນວນ</th>
+      <th>ສະຖານະ</th>
+    </tr></thead>
+    <tbody>`;
+
   shown.forEach(function(it){
-    if (S.stkGrp === 'all' && it.grp !== last) { last = it.grp;
-      html += `<div class="st-head">${esc(it.grp)}</div>`; }
     const st = stockState(it);
-    const origBadge = it.origin && it.origin !== 'ອື່ນໆ'
-      ? `<span style="font-size:11px;background:var(--line);color:var(--sub);padding:1px 5px;border-radius:4px;margin-left:4px">${esc(it.origin)}</span>` : '';
     const thumb = it.img_url
-      ? `<img src="${esc(it.img_url)}" style="width:52px;height:52px;object-fit:cover;border-radius:10px;flex-shrink:0">`
-      : `<span class="st-dot" style="background:${st.k==='ok'?'var(--line-2)':st.color}"></span>`;
-    html += `<button class="st-row" onclick="openItemMenu('${it.id}')">
-      ${thumb}
-      <span class="st-main">
-        <span class="st-name">${esc(it.name)}${origBadge}</span>
-        <span class="st-sub">${st.label ? `<b style="color:${st.color}">${st.label}</b> · ` : ''}ເຕືອນຕ່ຳກວ່າ ${Number(it.min_qty).toLocaleString()} ${esc(it.unit)}</span>
-      </span>
-      <span class="st-qty" style="color:${st.k==='ok'?'var(--text)':st.color}">
-        ${Number(it.qty).toLocaleString()}<small>${esc(it.unit)}</small></span>
-      <span class="st-go">${IC.right}</span>
-    </button>`;
+      ? `<img src="${esc(it.img_url)}" style="width:44px;height:44px;object-fit:cover;border-radius:8px;display:block">`
+      : `<div style="width:44px;height:44px;border-radius:8px;background:var(--bg);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:22px">💊</div>`;
+
+    const badgeStyle = st.k === 'ok'
+      ? 'background:#E8F7F1;color:#166A40'
+      : st.k === 'low'
+      ? 'background:#FEF5E3;color:#8A5A00'
+      : 'background:#FDEEF1;color:#B22242';
+    const badgeLabel = st.k === 'ok' ? 'ປົກກະຕິ' : st.label;
+
+    const origFlag = ORIG_FLAG[normOrig(it.origin)] || '🌐';
+    const qtyColor = st.k === 'ok' ? 'var(--text)' : st.color;
+
+    html += `<tr onclick="openItemMenu('${it.id}')">
+      <td style="padding-right:4px">${thumb}</td>
+      <td>
+        <div style="font-weight:600;font-size:13.5px;line-height:1.3">${esc(it.name)}</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:2px">ເຕືອນ &lt; ${Number(it.min_qty).toLocaleString()} ${esc(it.unit)}</div>
+      </td>
+      <td style="font-size:12px;color:var(--text3);white-space:nowrap">${esc(it.grp||'-')}</td>
+      <td style="text-align:center;font-size:20px">${origFlag}</td>
+      <td style="text-align:right;white-space:nowrap">
+        <span style="font-size:15px;font-weight:700;font-variant-numeric:tabular-nums;color:${qtyColor}">${Number(it.qty).toLocaleString()}</span>
+        <span style="font-size:11px;color:var(--text3);margin-left:2px">${esc(it.unit)}</span>
+      </td>
+      <td><span class="stk-badge" style="${badgeStyle}">${badgeLabel}</span></td>
+    </tr>`;
   });
+
+  html += '</tbody></table>';
   box.innerHTML = html;
 }
 
